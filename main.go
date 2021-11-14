@@ -40,13 +40,15 @@ func main() {
 func monitor(namespace string, timeOut *int64) {
 	log.Printf("Hook is triggered for the namespace %s and timeout for watching an event %d seconds\n", namespace, *timeOut)
 	if clientset != nil {
-		watch, errWatch := clientset.CoreV1().Pods(namespace).Watch(context.TODO(), metav1.ListOptions{Watch: true, TimeoutSeconds: timeOut})
+		watch, errWatch := clientset.CoreV1().Pods(namespace).Watch(context.Background(), metav1.ListOptions{})
 		if errWatch != nil {
-			log.Printf("No changes of the resources after %d waiting %v\n", timeOut, errWatch)
+			log.Printf("No changes of the resources after %d waiting %v\n", *timeOut, errWatch)
 			if pods, errList := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{}); errList == nil {
 				if len(pods.Items) > 0 {
 					DisplayPodList(pods.Items)
 				}
+			} else {
+				log.Printf("Error while pod listing  %v\n", errList)
 			}
 
 		} else {
