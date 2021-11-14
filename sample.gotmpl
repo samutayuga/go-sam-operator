@@ -1,0 +1,11 @@
+Pod List
+=========
+
+{{- range . }}
+{{- with . }}
+{{ .Name }}
+    {{- range .Status.Conditions }}
+    {{ .Type }} >> {{ .Status }}
+    {{- end }}
+{{- end }}
+{{- end }}
