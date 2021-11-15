@@ -1,10 +1,12 @@
 package utils
 
 import (
+	"context"
 	"flag"
 	"html/template"
 	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -13,7 +15,34 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 )
+
+type KubeClient struct {
+	Clientset kubernetes.Interface
+}
+
+func (k *KubeClient) watchPod(namespace string) {
+	if watch, errWatch := k.Clientset.CoreV1().Pods(namespace).Watch(context.Background(), metav1.ListOptions{}); errWatch == nil {
+		go func() {
+			for anEvent := range watch.ResultChan() {
+				if p, ok := anEvent.Object.(*v1.Pod); ok {
+					DisplayAPod(p)
+				} else {
+					log.Fatal("unexpected type")
+				}
+			}
+		}()
+	}
+	time.Sleep(5 * time.Second)
+}
+
+func (k *KubeClient) listPods(namespace string) []v1.Pod {
+	if pods, errList := k.Clientset.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{}); errList == nil {
+		return pods.Items
+	}
+	return make([]v1.Pod, 0)
+}
 
 var (
 	displayTemplate *template.Template
